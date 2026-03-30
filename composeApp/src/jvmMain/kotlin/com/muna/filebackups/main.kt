@@ -12,6 +12,7 @@ import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
+import com.muna.filebackups.components.NewBackupTaskDialog
 
 fun main() = application {
     var showNewBackupTaskDialog by remember { mutableStateOf(false) }
