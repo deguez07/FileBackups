@@ -13,12 +13,15 @@ import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
+import com.muna.filebackups.components.EditBackupTaskDialog
 import com.muna.filebackups.components.NewBackupTaskDialog
+import com.muna.filebackups.utils.showDeleteBackupTaskConfirmation
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 fun main() = application {
     var showNewBackupTaskDialog by remember { mutableStateOf(false) }
+    var editingTask by remember { mutableStateOf<BackupTask?>(null) }
     val tasks = remember { mutableStateListOf<BackupTask>() }
 
     Window(
@@ -42,11 +45,15 @@ fun main() = application {
                     tasks[index] = tasks[index].copy(isRunning = !tasks[index].isRunning)
                 }
             },
-            onEdit = { task ->
-                println("Edit clicked for task: ${task.fileName} (${task.id})")
-            },
+            onEdit = { task -> editingTask = task },
             onDelete = { task ->
-                println("Delete clicked for task: ${task.fileName} (${task.id})")
+                if (showDeleteBackupTaskConfirmation(task.filePath)) {
+                    val index = tasks.indexOfFirst { it.id == task.id }
+                    if (index >= 0) {
+                        tasks[index] = tasks[index].copy(isRunning = false)
+                        tasks.removeAt(index)
+                    }
+                }
             },
         )
     }
@@ -61,6 +68,26 @@ fun main() = application {
             NewBackupTaskDialog(
                 onDismiss = { showNewBackupTaskDialog = false },
                 onCreateTask = { task -> tasks.add(task) },
+            )
+        }
+    }
+
+    editingTask?.let { task ->
+        Window(
+            onCloseRequest = { editingTask = null },
+            title = "Edit backup task — ${task.fileName}",
+            state = WindowState(size = DpSize(520.dp, 400.dp)),
+            resizable = false,
+        ) {
+            EditBackupTaskDialog(
+                task = task,
+                onDismiss = { editingTask = null },
+                onUpdate = { maxBackups ->
+                    val index = tasks.indexOfFirst { it.id == task.id }
+                    if (index >= 0) {
+                        tasks[index] = tasks[index].copy(maxBackups = maxBackups)
+                    }
+                },
             )
         }
     }

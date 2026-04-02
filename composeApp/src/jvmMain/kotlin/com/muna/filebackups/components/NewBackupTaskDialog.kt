@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import com.muna.filebackups.BackupTask
 import com.muna.filebackups.utils.WindowAwareTooltipPositionProvider
+import com.muna.filebackups.utils.validateMaxBackupsInput
 import java.awt.FileDialog
 import java.awt.Frame
 import kotlin.uuid.ExperimentalUuidApi
@@ -65,20 +66,6 @@ fun NewBackupTaskDialog(onDismiss: () -> Unit, onCreateTask: (BackupTask) -> Uni
     var selectedFilePath by remember { mutableStateOf("") }
     var maxBackupsText by remember { mutableStateOf("") }
     var maxBackupsError by remember { mutableStateOf<String?>(null) }
-
-    /**
-     * Validates the Max Backups input after trimming whitespace.
-     * @return an error message if invalid, or null if valid.
-     */
-    fun validateMaxBackups(text: String): String? {
-        val trimmed = text.trim()
-        if (trimmed.isEmpty()) return "Max Backups is required"
-        val number = trimmed.toIntOrNull()
-        if (number == null) return "Must be a valid integer"
-        if (number < 1) return "Must be a positive integer"
-        if (number >= 100) return "Must be less than 100"
-        return null
-    }
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -191,7 +178,7 @@ fun NewBackupTaskDialog(onDismiss: () -> Unit, onCreateTask: (BackupTask) -> Uni
                     value = maxBackupsText,
                     onValueChange = { newValue ->
                         maxBackupsText = newValue
-                        maxBackupsError = validateMaxBackups(newValue)
+                        maxBackupsError = validateMaxBackupsInput(newValue)
                     },
                     label = { Text("Max Backups") },
                     isError = maxBackupsError != null,
