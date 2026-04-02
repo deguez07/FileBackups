@@ -40,9 +40,12 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import com.muna.filebackups.BackupTask
 import com.muna.filebackups.utils.WindowAwareTooltipPositionProvider
 import java.awt.FileDialog
 import java.awt.Frame
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * Dialog form for creating a new backup task.
@@ -54,10 +57,11 @@ import java.awt.Frame
  * in a tooltip when the text overflows the field.
  *
  * @param onDismiss called when the dialog should close (Cancel or Create Task).
+ * @param onCreateTask called with the newly created [BackupTask] when the form is submitted.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
-fun NewBackupTaskDialog(onDismiss: () -> Unit) {
+fun NewBackupTaskDialog(onDismiss: () -> Unit, onCreateTask: (BackupTask) -> Unit) {
     var selectedFilePath by remember { mutableStateOf("") }
     var maxBackupsText by remember { mutableStateOf("") }
     var maxBackupsError by remember { mutableStateOf<String?>(null) }
@@ -232,7 +236,15 @@ fun NewBackupTaskDialog(onDismiss: () -> Unit) {
                         state = rememberTooltipState(),
                     ) {
                         Button(
-                            onClick = onDismiss,
+                            onClick = {
+                                val task = BackupTask(
+                                    id = Uuid.random(),
+                                    filePath = selectedFilePath.trim(),
+                                    maxBackups = maxBackupsText.trim().toInt(),
+                                )
+                                onCreateTask(task)
+                                onDismiss()
+                            },
                             enabled = isFormValid,
                         ) {
                             Text("Create Task")

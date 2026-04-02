@@ -1,6 +1,7 @@
 package com.muna.filebackups
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -13,9 +14,12 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import com.muna.filebackups.components.NewBackupTaskDialog
+import kotlin.uuid.ExperimentalUuidApi
 
+@OptIn(ExperimentalUuidApi::class)
 fun main() = application {
     var showNewBackupTaskDialog by remember { mutableStateOf(false) }
+    val tasks = remember { mutableStateListOf<BackupTask>() }
 
     Window(
         onCloseRequest = ::exitApplication,
@@ -30,7 +34,21 @@ fun main() = application {
                 )
             }
         }
-        App()
+        App(
+            tasks = tasks,
+            onToggleRunning = { task ->
+                val index = tasks.indexOfFirst { it.id == task.id }
+                if (index >= 0) {
+                    tasks[index] = tasks[index].copy(isRunning = !tasks[index].isRunning)
+                }
+            },
+            onEdit = { task ->
+                println("Edit clicked for task: ${task.fileName} (${task.id})")
+            },
+            onDelete = { task ->
+                println("Delete clicked for task: ${task.fileName} (${task.id})")
+            },
+        )
     }
 
     if (showNewBackupTaskDialog) {
@@ -40,7 +58,10 @@ fun main() = application {
             state = WindowState(size = DpSize(700.dp, 400.dp)),
             resizable = false,
         ) {
-            NewBackupTaskDialog(onDismiss = { showNewBackupTaskDialog = false })
+            NewBackupTaskDialog(
+                onDismiss = { showNewBackupTaskDialog = false },
+                onCreateTask = { task -> tasks.add(task) },
+            )
         }
     }
 }
