@@ -81,6 +81,8 @@ fun BackupTaskTable(
 
 private val columnWeights = floatArrayOf(0.15f, 0.30f, 0.10f, 0.13f, 0.12f, 0.12f)
 
+private val columnGap = 8.dp
+
 @Composable
 private fun HeaderRow() {
     val headers = listOf("File Name", "File Path", "Max Backups", "Current Backups", "State", "Actions")
@@ -89,6 +91,7 @@ private fun HeaderRow() {
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(columnGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         headers.forEachIndexed { i, header ->
@@ -112,6 +115,7 @@ private fun TaskRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(columnGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
