@@ -57,13 +57,18 @@ import kotlin.uuid.Uuid
  * tooltip explaining what is missing. Hovering the file input shows the full path
  * in a tooltip when the text overflows the field.
  *
+ * @param initialSelectedFilePath optional path shown in the File field when the dialog opens (e.g. from drag-and-drop).
  * @param onDismiss called when the dialog should close (Cancel or Create Task).
  * @param onCreateTask called with the newly created [BackupTask] when the form is submitted.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
-fun NewBackupTaskDialog(onDismiss: () -> Unit, onCreateTask: (BackupTask) -> Unit) {
-    var selectedFilePath by remember { mutableStateOf("") }
+fun NewBackupTaskDialog(
+    initialSelectedFilePath: String = "",
+    onDismiss: () -> Unit,
+    onCreateTask: (BackupTask) -> Unit,
+) {
+    var selectedFilePath by remember(initialSelectedFilePath) { mutableStateOf(initialSelectedFilePath) }
     var maxBackupsText by remember { mutableStateOf("") }
     var maxBackupsError by remember { mutableStateOf<String?>(null) }
 

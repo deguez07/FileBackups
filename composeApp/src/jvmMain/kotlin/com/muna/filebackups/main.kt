@@ -66,6 +66,7 @@ fun main() {
 
     application {
         var showNewBackupTaskDialog by remember { mutableStateOf(false) }
+        var newTaskInitialFilePath by remember { mutableStateOf("") }
         var editingTask by remember { mutableStateOf<BackupTask?>(null) }
         val dbTasks by repository.observeAll().collectAsState(initial = emptyList())
         val uiScope = rememberCoroutineScope()
@@ -96,12 +97,19 @@ fun main() {
                     Item(
                         text = "New backup task",
                         shortcut = KeyShortcut(Key.N, meta = System.getProperty("os.name").contains("Mac", ignoreCase = true), ctrl = !System.getProperty("os.name").contains("Mac", ignoreCase = true)),
-                        onClick = { showNewBackupTaskDialog = true },
+                        onClick = {
+                            newTaskInitialFilePath = ""
+                            showNewBackupTaskDialog = true
+                        },
                     )
                 }
             }
             App(
                 tasks = tasks,
+                onFilesDropped = { path ->
+                    newTaskInitialFilePath = path
+                    showNewBackupTaskDialog = true
+                },
                 onToggleRunning = { task ->
                     val starting = !task.isRunning
                     if (showBackupTaskStateToggleConfirmation(task.filePath, starting)) {
@@ -129,13 +137,20 @@ fun main() {
 
         if (showNewBackupTaskDialog) {
             Window(
-                onCloseRequest = { showNewBackupTaskDialog = false },
+                onCloseRequest = {
+                    showNewBackupTaskDialog = false
+                    newTaskInitialFilePath = ""
+                },
                 title = "New Backup Task",
                 state = WindowState(size = DpSize(900.dp, 500.dp)),
                 resizable = false,
             ) {
                 NewBackupTaskDialog(
-                    onDismiss = { showNewBackupTaskDialog = false },
+                    initialSelectedFilePath = newTaskInitialFilePath,
+                    onDismiss = {
+                        showNewBackupTaskDialog = false
+                        newTaskInitialFilePath = ""
+                    },
                     onCreateTask = { task ->
                         uiScope.launch {
                             repository.insert(task)
