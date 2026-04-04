@@ -15,6 +15,7 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import com.muna.filebackups.components.EditBackupTaskDialog
 import com.muna.filebackups.components.NewBackupTaskDialog
+import com.muna.filebackups.utils.showBackupTaskStateToggleConfirmation
 import com.muna.filebackups.utils.showDeleteBackupTaskConfirmation
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -40,9 +41,12 @@ fun main() = application {
         App(
             tasks = tasks,
             onToggleRunning = { task ->
-                val index = tasks.indexOfFirst { it.id == task.id }
-                if (index >= 0) {
-                    tasks[index] = tasks[index].copy(isRunning = !tasks[index].isRunning)
+                val starting = !task.isRunning
+                if (showBackupTaskStateToggleConfirmation(task.filePath, starting)) {
+                    val index = tasks.indexOfFirst { it.id == task.id }
+                    if (index >= 0) {
+                        tasks[index] = tasks[index].copy(isRunning = !tasks[index].isRunning)
+                    }
                 }
             },
             onEdit = { task -> editingTask = task },
@@ -62,7 +66,7 @@ fun main() = application {
         Window(
             onCloseRequest = { showNewBackupTaskDialog = false },
             title = "New Backup Task",
-            state = WindowState(size = DpSize(700.dp, 400.dp)),
+            state = WindowState(size = DpSize(900.dp, 500.dp)),
             resizable = false,
         ) {
             NewBackupTaskDialog(

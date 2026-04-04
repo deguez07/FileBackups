@@ -31,3 +31,40 @@ fun showDeleteBackupTaskConfirmation(filePath: String): Boolean {
     )
     return result == 1
 }
+
+/**
+ * Native confirmation before switching a backup task between paused and running.
+ *
+ * @param filePath full path (shown in italics in the message, HTML-escaped)
+ * @param starting `true` when going from paused to running, `false` when pausing
+ * @return `true` if the user confirmed **Start** or **Pause**, `false` for **Cancel** or close
+ */
+fun showBackupTaskStateToggleConfirmation(filePath: String, starting: Boolean): Boolean {
+    val safePath = filePath.htmlEscape()
+    val title: String
+    val message: String
+    val confirmLabel: String
+    if (starting) {
+        title = "Start this backup task?"
+        message =
+            "<html><body style='width: 420px;'>Backups for <i>$safePath</i> will run while the task is started.</body></html>"
+        confirmLabel = "Start"
+    } else {
+        title = "Pause this backup task?"
+        message =
+            "<html><body style='width: 420px;'>Backups for <i>$safePath</i> will not run until you start the task again.</body></html>"
+        confirmLabel = "Pause"
+    }
+    val options = arrayOf("Cancel", confirmLabel)
+    val result = JOptionPane.showOptionDialog(
+        null,
+        message,
+        title,
+        JOptionPane.DEFAULT_OPTION,
+        JOptionPane.QUESTION_MESSAGE,
+        null,
+        options,
+        options[0],
+    )
+    return result == 1
+}
