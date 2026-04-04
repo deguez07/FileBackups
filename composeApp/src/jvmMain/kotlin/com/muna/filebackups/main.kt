@@ -1,5 +1,6 @@
 package com.muna.filebackups
 
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -15,8 +16,12 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import com.muna.filebackups.components.EditBackupTaskDialog
 import com.muna.filebackups.components.NewBackupTaskDialog
+import com.muna.filebackups.service.BackupTaskManager
 import com.muna.filebackups.utils.showBackupTaskStateToggleConfirmation
 import com.muna.filebackups.utils.showDeleteBackupTaskConfirmation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
@@ -24,6 +29,26 @@ fun main() = application {
     var showNewBackupTaskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<BackupTask?>(null) }
     val tasks = remember { mutableStateListOf<BackupTask>() }
+
+    val managerScope = remember { CoroutineScope(SupervisorJob()) }
+    val backupTaskManager = remember {
+        BackupTaskManager(
+            scope = managerScope,
+            onBackupCountChanged = { taskId, count ->
+                val index = tasks.indexOfFirst { it.id == taskId }
+                if (index >= 0) {
+                    tasks[index] = tasks[index].copy(currentBackups = count)
+                }
+            },
+        )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            backupTaskManager.stopAll()
+            managerScope.cancel()
+        }
+    }
 
     Window(
         onCloseRequest = ::exitApplication,
@@ -45,16 +70,22 @@ fun main() = application {
                 if (showBackupTaskStateToggleConfirmation(task.filePath, starting)) {
                     val index = tasks.indexOfFirst { it.id == task.id }
                     if (index >= 0) {
-                        tasks[index] = tasks[index].copy(isRunning = !tasks[index].isRunning)
+                        val updated = tasks[index].copy(isRunning = starting)
+                        tasks[index] = updated
+                        if (starting) {
+                            backupTaskManager.start(updated)
+                        } else {
+                            backupTaskManager.stop(updated.id)
+                        }
                     }
                 }
             },
             onEdit = { task -> editingTask = task },
             onDelete = { task ->
                 if (showDeleteBackupTaskConfirmation(task.filePath)) {
+                    backupTaskManager.remove(task.id)
                     val index = tasks.indexOfFirst { it.id == task.id }
                     if (index >= 0) {
-                        tasks[index] = tasks[index].copy(isRunning = false)
                         tasks.removeAt(index)
                     }
                 }
@@ -89,7 +120,11 @@ fun main() = application {
                 onUpdate = { maxBackups ->
                     val index = tasks.indexOfFirst { it.id == task.id }
                     if (index >= 0) {
-                        tasks[index] = tasks[index].copy(maxBackups = maxBackups)
+                        val updated = tasks[index].copy(maxBackups = maxBackups)
+                        tasks[index] = updated
+                        if (updated.isRunning) {
+                            backupTaskManager.restart(updated)
+                        }
                     }
                 },
             )

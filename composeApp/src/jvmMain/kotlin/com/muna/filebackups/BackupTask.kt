@@ -17,13 +17,21 @@ data class BackupTask @OptIn(ExperimentalUuidApi::class) constructor(
     /** The path to the file to be backed up. */
     val filePath: String,
 
-    /** The maximum number of backups to keep. */
+    /**
+     * Maximum number of timestamped backups to keep under the file's `backups/` folder.
+     * The `backups/current/` directory does not count toward this limit.
+     * When a new backup is created and the count (excluding `current`) exceeds this value,
+     * the oldest backup folder is removed until the count is at most this value.
+     */
     val maxBackups: Int,
 
     /** Whether the backup task is currently running. */
     val isRunning: Boolean = false,
 
-    /** The current number of backups for this task. */
+    /**
+     * Number of backup entries under `backups/` next to the watched file, excluding
+     * the `current/` folder (i.e. timestamped backup folders only).
+     */
     val currentBackups: Int = 0,
 ) {
     val fileName: String get() = File(filePath).name
