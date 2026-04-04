@@ -16,6 +16,7 @@ import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.runtime.collectAsState
 import com.muna.filebackups.components.EditBackupTaskDialog
 import com.muna.filebackups.components.NewBackupTaskDialog
@@ -88,9 +89,11 @@ fun main() {
             }
         }
 
+        val mainWindowState = rememberWindowState(width = 1200.dp, height = 800.dp)
         Window(
             onCloseRequest = ::exitApplication,
             title = "filebackups",
+            state = mainWindowState,
         ) {
             MenuBar {
                 Menu("Actions") {
