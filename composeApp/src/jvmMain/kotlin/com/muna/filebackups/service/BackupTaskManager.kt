@@ -13,6 +13,7 @@ import kotlin.uuid.Uuid
  * Manages the lifecycle of [BackupService] instances for each [BackupTask].
  *
  * Call [start] / [stop] when the user toggles a task, and [remove] when a task is deleted.
+ * Persisted `isRunning` / task rows are updated by the UI layer (Room), not here.
  * The [onBackupCountChanged] callback is dispatched on [Dispatchers.Swing] so callers can
  * safely mutate Compose/UI state directly.
  */

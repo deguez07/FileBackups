@@ -5,10 +5,12 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Represents a task to back up a specific file.
+ * In-memory model for a backup task.
  *
- * Contains configuration and state for backup operations, including the source file path,
- * backup limits, and current operational status.
+ * [id], [filePath], [maxBackups], and [isRunning] are persisted in Room (`backup_tasks`).
+ * [currentBackups] is **not** stored in the database: it reflects timestamped folders under
+ * the watched file’s `backups/` directory (excluding `current/`), and is refreshed from disk
+ * when loading from the DB and live while a task runs (see `BackupService`).
  */
 data class BackupTask @OptIn(ExperimentalUuidApi::class) constructor(
     /** The id of the backup task. */
