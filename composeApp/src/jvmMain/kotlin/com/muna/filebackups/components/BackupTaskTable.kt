@@ -3,6 +3,7 @@ package com.muna.filebackups.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,10 +22,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.muna.filebackups.BackupTask
 import kotlin.uuid.ExperimentalUuidApi
@@ -83,6 +89,48 @@ private val columnWeights = floatArrayOf(0.15f, 0.30f, 0.10f, 0.13f, 0.12f, 0.12
 
 private val columnGap = 8.dp
 
+private const val pathEllipsis = "..."
+
+/**
+ * When [path] is wider than [maxWidthPx], returns an ellipsis prefix plus the longest trailing
+ * suffix that fits; otherwise returns [path] unchanged.
+ */
+private fun ellipsizePathKeepTail(
+    path: String,
+    maxWidthPx: Int,
+    style: TextStyle,
+    measurer: TextMeasurer,
+): String {
+    if (path.isEmpty() || maxWidthPx <= 0) return path
+    val unbounded = Constraints(maxWidth = Int.MAX_VALUE)
+    fun measureWidth(text: String) = measurer.measure(
+        text = text,
+        style = style,
+        softWrap = false,
+        maxLines = 1,
+        constraints = unbounded,
+    ).size.width
+
+    if (measureWidth(path) <= maxWidthPx) return path
+
+    if (measureWidth(pathEllipsis) > maxWidthPx) return pathEllipsis
+
+    var low = 1
+    var high = path.length
+    var best = pathEllipsis
+    while (low <= high) {
+        val mid = (low + high + 1) / 2
+        val candidate = pathEllipsis + path.takeLast(mid)
+        if (measureWidth(candidate) <= maxWidthPx) {
+            best = candidate
+            low = mid + 1
+        } else {
+            high = mid - 1
+        }
+    }
+    return best
+}
+
 @Composable
 private fun HeaderRow() {
     val headers = listOf("File Name", "File Path", "Max Backups", "Current Backups", "State", "Actions")
@@ -125,13 +173,21 @@ private fun TaskRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(columnWeights[0]),
         )
-        Text(
-            text = task.filePath,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(columnWeights[1]),
-        )
+        BoxWithConstraints(modifier = Modifier.weight(columnWeights[1])) {
+            val textMeasurer = rememberTextMeasurer()
+            val pathStyle = MaterialTheme.typography.bodyMedium
+            val maxW = constraints.maxWidth
+            val pathText = remember(task.filePath, maxW, pathStyle) {
+                ellipsizePathKeepTail(task.filePath, maxW, pathStyle, textMeasurer)
+            }
+            Text(
+                text = pathText,
+                style = pathStyle,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Text(
             text = task.maxBackups.toString(),
             style = MaterialTheme.typography.bodyMedium,
